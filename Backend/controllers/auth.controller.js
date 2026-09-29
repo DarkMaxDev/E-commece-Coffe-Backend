@@ -33,7 +33,7 @@ const setCookies = (res, accessToken, refreshToken) => {
     });
 };
 
-export const signup = async (req, res) => {
+export const signup = async (req, res, next) => {
     const { email, password, name } = req.body;
     try {
         const userExists = await User.findOne({ email });
@@ -54,9 +54,9 @@ export const signup = async (req, res) => {
             email: user.email,
             role: user.role,
         });
-    } catch (error) {
-        console.log("Error in signup controller", error.message);
-        res.status(500).json({ message: error.message });
+    }  catch (error) {
+        console.error("Error completo en signup:", error); // Esto mostrará la línea exacta del fallo
+        res.status(500).json({ message: error.message, stack: error.stack });
     }
 };
 
