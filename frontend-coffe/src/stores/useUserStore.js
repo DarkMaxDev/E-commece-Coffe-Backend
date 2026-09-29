@@ -71,12 +71,12 @@ export const useUserStore = create((set, get) => ({
 // Interceptor de Axios para renovar el token
 let refreshPromise = null;
 
+// En useUserStore.js - Interceptor de Axios
 axios.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // Evitamos entrar en bucle si el error proviene de /auth/profile en la carga inicial o de /auth/login
         if (
             error.response?.status === 401 &&
             !originalRequest._retry &&
@@ -98,7 +98,8 @@ axios.interceptors.response.use(
                 return axios(originalRequest);
             } catch (refreshError) {
                 refreshPromise = null;
-                useUserStore.getState().logout();
+                // Solo si falla el refresh token limpiamos la sesión sin forzar redirecciones bruscas
+                set({ user: null });
                 return Promise.reject(refreshError);
             }
         }
