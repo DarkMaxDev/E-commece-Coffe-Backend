@@ -15,9 +15,7 @@ import User from "../models/user.model.js";
             if (!user) {
                 return res.status(401).json({ message: "User not found" });
             }
-
             req.user = user;
-
             next();
         } catch (error) {
             if (error.name === "TokenExpiredError") {
