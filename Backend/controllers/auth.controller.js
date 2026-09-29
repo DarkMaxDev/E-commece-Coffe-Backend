@@ -18,17 +18,21 @@ const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); 
 };
 
+// Configuración adaptada para comunicación Cross-Domain (Vercel <-> Render)
 const setCookies = (res, accessToken, refreshToken) => {
+    const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("accessToken", accessToken, {
         httpOnly: true, 
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isProduction, // Requerido si sameSite es "none"
+        sameSite: isProduction ? "none" : "lax", // "none" permite enviar cookies entre dominios
         maxAge: 15 * 60 * 1000,
     });
+
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict", 
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax", 
         maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 };
@@ -55,7 +59,7 @@ export const signup = async (req, res, next) => {
             role: user.role,
         });
     }  catch (error) {
-        console.error("Error completo en signup:", error); // Esto mostrará la línea exacta del fallo
+        console.error("Error completo en signup:", error);
         res.status(500).json({ message: error.message, stack: error.stack });
     }
 };
@@ -93,8 +97,15 @@ export const logout = async (req, res) => {
             await redis.del(`refresh_token:${decoded.userId}`);
         }
 
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        const isProduction = process.env.NODE_ENV === "production";
+        const cookieOptions = {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+        };
+
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
         res.json({ message: "Logged out successfully" });
     } catch (error) {
         console.log("Error in logout controller", error.message);
@@ -118,11 +129,12 @@ export const refreshToken = async (req, res) => {
         }
 
         const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
+        const isProduction = process.env.NODE_ENV === "production";
 
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
             maxAge: 15 * 60 * 1000,
         });
 
@@ -140,4 +152,3 @@ export const getProfile = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
-
