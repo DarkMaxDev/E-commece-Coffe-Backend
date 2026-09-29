@@ -18,22 +18,19 @@ const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); 
 };
 
-// Configuración adaptada para comunicación Cross-Domain (Vercel <-> Render)
 const setCookies = (res, accessToken, refreshToken) => {
-    const isProduction = process.env.NODE_ENV === "production";
-
     res.cookie("accessToken", accessToken, {
-        httpOnly: true, 
-        secure: isProduction, // Requerido si sameSite es "none"
-        sameSite: isProduction ? "none" : "lax", // "none" permite enviar cookies entre dominios
-        maxAge: 15 * 60 * 1000,
+        httpOnly: true,
+        secure: true, 
+        sameSite: "none",
+        maxAge: 15 * 60 * 1000, 
     });
 
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "none" : "lax", 
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        secure: true, 
+        sameSite: "none", 
+        maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 };
 
