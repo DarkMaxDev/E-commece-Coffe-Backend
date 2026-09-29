@@ -19,13 +19,21 @@ const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5174", 
-      "http://localhost:5173",
-      process.env.CLIENT_URL,
-    ].filter(Boolean),    
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por la política de CORS"));
+      }
+    },
     credentials: true,
   })
 );
