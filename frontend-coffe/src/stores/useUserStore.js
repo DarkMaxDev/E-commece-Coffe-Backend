@@ -98,8 +98,7 @@ axios.interceptors.response.use(
                 return axios(originalRequest);
             } catch (refreshError) {
                 refreshPromise = null;
-                // Solo si falla el refresh token limpiamos la sesión sin forzar redirecciones bruscas
-                set({ user: null });
+                useUserStore.setState({ user: null }); 
                 return Promise.reject(refreshError);
             }
         }
