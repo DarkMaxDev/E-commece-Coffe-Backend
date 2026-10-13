@@ -10,8 +10,6 @@ import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import { connectDB } from "./lib/db.js";
 
-app.set("trust proxy", 1);
-
 dotenv.config();
 
 const app = express();
