@@ -18,13 +18,11 @@ const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); 
 };
 
-// Objeto unificado para asegurar que login, logout y refresh usen la misma política
 const getCookieOptions = () => {
-    const isProduction = process.env.NODE_ENV === "production";
     return {
         httpOnly: true,
-        secure: true, // Siempre true en Render ya que usa HTTPS
-        sameSite: "none", // Obligatorio si frontend y backend están en subdominios distintos de Render
+        secure: true, 
+        sameSite: "none", 
     };
 };
 
