@@ -18,19 +18,27 @@ const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); 
 };
 
-const setCookies = (res, accessToken, refreshToken) => {
-    res.cookie("accessToken", accessToken, {
+// Objeto unificado para asegurar que login, logout y refresh usen la misma política
+const getCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
         httpOnly: true,
-        secure: true, 
-        sameSite: "none",
-        maxAge: 15 * 60 * 1000, 
+        secure: true, // Siempre true en Render ya que usa HTTPS
+        sameSite: "none", // Obligatorio si frontend y backend están en subdominios distintos de Render
+    };
+};
+
+const setCookies = (res, accessToken, refreshToken) => {
+    const options = getCookieOptions();
+
+    res.cookie("accessToken", accessToken, {
+        ...options,
+        maxAge: 15 * 60 * 1000, // 15 minutos
     });
 
     res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: true, 
-        sameSite: "none", 
-        maxAge: 7 * 24 * 60 * 60 * 1000, 
+        ...options,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
     });
 };
 
@@ -55,7 +63,7 @@ export const signup = async (req, res, next) => {
             email: user.email,
             role: user.role,
         });
-    }  catch (error) {
+    } catch (error) {
         console.error("Error completo en signup:", error);
         res.status(500).json({ message: error.message, stack: error.stack });
     }
@@ -94,12 +102,7 @@ export const logout = async (req, res) => {
             await redis.del(`refresh_token:${decoded.userId}`);
         }
 
-        const isProduction = process.env.NODE_ENV === "production";
-        const cookieOptions = {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? "none" : "lax",
-        };
+        const cookieOptions = getCookieOptions();
 
         res.clearCookie("accessToken", cookieOptions);
         res.clearCookie("refreshToken", cookieOptions);
@@ -126,12 +129,10 @@ export const refreshToken = async (req, res) => {
         }
 
         const accessToken = jwt.sign({ userId: decoded.userId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
-        const isProduction = process.env.NODE_ENV === "production";
-
+        
+        const cookieOptions = getCookieOptions();
         res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? "none" : "lax",
+            ...cookieOptions,
             maxAge: 15 * 60 * 1000,
         });
 
